@@ -29,6 +29,14 @@ class AsignaturaSeeder extends Seeder
             'email' => 'pascualitoperales@gmail.com',
             'password' => Hash::make('password'),
         ]);
+        $profe2 = User::create([
+            'name' => 'Anibal farinas',
+            'role' => 'teacher',
+            'cedula' => '29999999',
+            'username' => 'm29999999',
+            'email' => 'anibalfarinas@gmail.com',
+            'password' => Hash::make('password'),
+        ]);
         $estudiante3 = User::create([
             'name' => 'Pascual Perales 2',
             'role' => 'student',
@@ -49,16 +57,18 @@ class AsignaturaSeeder extends Seeder
         // Crear algunas asignaturas
         $asignatura1 = Asignatura::create(['nombre' => 'Matemáticas', 'codigo' => 'MAT-101']);
         $asignatura2 = Asignatura::create(['nombre' => 'Historia', 'codigo' => 'HIS-101']);
+        $asignatura3 = Asignatura::create(['nombre' => 'Dinamicos', 'codigo' => 'Din-999']);
 
         // Crear algunas secciones
         $seccion1 = Seccion::create(['nombre' => '01', 'capacidad' => 1, 'asignatura_id' => $asignatura1->id]);
         $seccion2 = Seccion::create(['nombre' => '02', 'capacidad' => 1, 'asignatura_id' => $asignatura1->id]);
         $seccion3 = Seccion::create(['nombre' => '01', 'capacidad' => 3, 'asignatura_id' => $asignatura2->id]);
-
+        $seccion4 = Seccion::create(['nombre' => '01', 'capacidad' => 3, 'asignatura_id' => $asignatura3->id]);
         // Relacionar profesor con asignaturas
         $profe1->asignaturas()->attach([$asignatura1->id, $asignatura2->id]);
-
+        $profe2->asignaturas()->attach([$asignatura1->id, $asignatura3->id]);
         // Relacionar profesor con secciones
         $profe1->secciones()->attach([$seccion2->id, $seccion3->id]);
+        $profe2->secciones()->attach([$seccion1->id, $seccion4->id]);
     }
 }
