@@ -6,6 +6,7 @@ use App\Models\Seccion;
 use App\Models\Anexo;
 use App\Models\User;
 use App\Models\Asignatura;
+use App\Models\User_Seccion;
 use Illuminate\Http\Request;
 
 class AsignaturaController extends Controller
@@ -29,6 +30,46 @@ class AsignaturaController extends Controller
 
     public function adminIndex()
     {
+        $usuario = auth()->user();
+        // Carga todas las secciones
+        $secciones = Seccion::all();
+
+        foreach ($secciones as $seccion) {
+            $seccion->asignatura = Asignatura::find($seccion->asignatura_id);
+
+            // Obtener el total de estudiantes inscritos en la seccion,
+            // teniendo en cuenta que los estudiantes tienen el rol: student.
+            $inscritos = $seccion->estudiantes;
+            $seccion->total_estudiantes = 0;
+
+            // Recorrer los inscritos y obtener el usuario
+            foreach ($inscritos as $inscrito) {
+                if ($inscrito->role == 'student') {
+                    $seccion->total_estudiantes++;
+                } elseif ($inscrito->role == 'teacher') {
+                    $seccion->docente = $inscrito;
+                }
+            }
+
+            // Obtener anexos de esta seccion
+            $anexos = Anexo::where('seccion_id', $seccion->id)->get();
+
+            // Obtener informacion de los usuarios que solicitaron anexo
+            $seccion->solicitudes_anexos = $anexos->map(function ($anexo) {
+                $anexo_usuario = User::find($anexo->user_id);
+                $anexo->usuario = $anexo_usuario;
+
+                $anexo_seccion = Seccion::find($anexo->seccion_id);
+                $anexo->seccion = $anexo_seccion;
+
+                $anexo_asignatura = Asignatura::find($anexo_seccion->asignatura_id);
+                $anexo->asignatura = $anexo_asignatura;
+                return $anexo;
+            });
+        }
+
+        // Devuelve la vista con las asignaturas
+        return view('asignaturas.admin', compact('secciones'));
     }
 
     public function teacherIndex()
@@ -38,6 +79,22 @@ class AsignaturaController extends Controller
         $asignaturas = $usuario->secciones->map(function ($seccion) {
             $temp_asignatura = $seccion->asignatura;
             $temp_asignatura->seccion = $seccion->nombre;
+
+            // Obtener el total de estudiantes inscritos en la seccion,
+            // teniendo en cuenta que los estudiantes tienen el rol: student.
+            $inscritos = $seccion->estudiantes;
+
+            $temp_asignatura->total_estudiantes = 0;
+
+            // Recorrer los inscritos y obtener el usuario
+            foreach ($inscritos as $inscrito) {
+                if ($inscrito->role == 'student') {
+                    $temp_asignatura->total_estudiantes++;
+                }
+            }
+
+            // Obtener la capacidad de la seccion
+            $temp_asignatura->capacidad = $seccion->capacidad;
             return $temp_asignatura;
         });
 
@@ -104,7 +161,7 @@ class AsignaturaController extends Controller
         }
 
         // Devuelve la vista con las asignaturas
-        return view('asignaturas.index', compact('asignaturas', 'asignaturas_no_inscritas'));
+        return view('asignaturas.student', compact('asignaturas', 'asignaturas_no_inscritas'));
     }
 
     /**

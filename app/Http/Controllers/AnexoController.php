@@ -116,7 +116,7 @@ class AnexoController extends Controller
         $secciones_usuario = $usuario->secciones;
         $seccion = Seccion::find($anexo->seccion_id);
         
-        if (!$secciones_usuario->contains($seccion)) {
+        if (($usuario->role === 'teacher') && !$secciones_usuario->contains($seccion)) {
             return redirect()->back()->with('error', 'No tienes permiso para realizar esta acción.');
         }
 
@@ -139,7 +139,19 @@ class AnexoController extends Controller
             return redirect()->back()->with('error', 'El estudiante ya está inscrito en esta asignatura.');
         }
 
+        // Recorrer el listado de estudiantes de la seccion para obtener los usuarios con el rol de estudiante
+        $estudiantes_seccion = $seccion->estudiantes;
+        $estudiantes_seccion = $estudiantes_seccion->filter(function ($estudiante) {
+            return $estudiante->role === 'student';
+        });
+
         if ($aprobado) {
+            // Verificar si hay cupo en la sección
+            $seccion_llena = $estudiantes_seccion->count() >= (int)$seccion->capacidad;
+
+            if ($seccion_llena) {
+                return redirect()->back()->with('error', 'La sección está llena.');
+            }
             $anexo->aceptado = true;
             $anexo->rechazado = false;
 
